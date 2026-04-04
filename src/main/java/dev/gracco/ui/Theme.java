@@ -41,14 +41,15 @@ public class Theme {
     }
 
     //Colors
-    @Getter private static final Color primary = new Color(45, 125, 48);
-    @Getter private static final Color primaryHover = new Color(38, 106, 41);
-    @Getter private static final Color secondary = new Color(164, 215, 166);
-    @Getter private static final Color accent = new Color(55, 170, 210);
-    @Getter private static final Color accentHover = new Color(37, 150, 190);
-    @Getter private static final Color highlight = new Color(232, 244, 232);
-    @Getter private static final Color white = new Color(255, 255, 255);
-    @Getter private static final Color black = new Color(0, 0, 0);
+    public static final Color PRIMARY = new Color(51, 150, 55);
+    public static final Color PRIMARY_HOVER = new Color(45, 125, 48);
+    public static final Color SECONDARY = new Color(109, 176, 104);
+    public static final Color ACCENT = new Color(55, 170, 210);
+    public static final Color ACCENT_HOVER = new Color(37, 150, 190);
+    public static final Color HIGHLIGHT = new Color(183, 216, 178);
+    public static final Color BACKGROUND_GREEN = new Color(231, 242, 229);
+    public static final Color WHITE = new Color(255, 255, 255);
+    public static final Color BLACK = new Color(0, 0, 0);
 
     //Fonts
     private static final Map<FontType, Font> FONT_CACHE = new EnumMap<>(FontType.class);

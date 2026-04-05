@@ -1,6 +1,7 @@
 package dev.gracco.ui.screen;
 
 import dev.gracco.Main;
+import dev.gracco.ui.Alert;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.element.JRoundedButton;
 import dev.gracco.ui.element.JRoundedPanel;

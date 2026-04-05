@@ -2,8 +2,8 @@ package dev.gracco.ui.screen;
 
 import dev.gracco.Main;
 import dev.gracco.ui.Theme;
-import dev.gracco.ui.panels.DashboardPanel;
 import dev.gracco.ui.panels.AppointmentPanel;
+import dev.gracco.ui.panels.DashboardPanel;
 import dev.gracco.ui.panels.PatientPanel;
 
 import javax.swing.BorderFactory;
@@ -168,17 +168,13 @@ public class MainScreen extends JFrame {
     private void updateSidebarSelection() {
         styleSidebarButton(dashboardButton, selectedPanel.equals("Dashboard"), "Dashboard",
                 Theme.getDashboardColor(), Theme.getDashboardWhite());
-
         styleSidebarButton(appointmentButton, selectedPanel.equals("Appointments"), "Appointments",
                 Theme.getAppointmentColor(), Theme.getAppointmentWhite());
-
         styleSidebarButton(patientButton, selectedPanel.equals("Patients"), "Patients",
                 Theme.getPatientColor(), Theme.getPatientWhite());
     }
 
-    private void styleSidebarButton(JButton button, boolean selected, String expandedText,
-                                    Icon normalIcon, Icon whiteIcon) {
-
+    private void styleSidebarButton(JButton button, boolean selected, String expandedText, Icon normalIcon, Icon whiteIcon) {
         button.setIcon(selected ? whiteIcon : normalIcon);
 
         int currentWidth = sidebar.getPreferredSize().width;
@@ -215,9 +211,7 @@ public class MainScreen extends JFrame {
         int startWidth = sidebar.getPreferredSize().width;
         int targetWidth = sidebarExpanded ? COLLAPSED_SIDEBAR_WIDTH : EXPANDED_SIDEBAR_WIDTH;
 
-        if (!sidebarExpanded) {
-            titleLabel.setText(Main.getName());
-        }
+        if (!sidebarExpanded) titleLabel.setText(Main.getName());
 
         int distance = targetWidth - startWidth;
         int steps = Math.max(1, SIDEBAR_ANIMATION_DURATION / SIDEBAR_ANIMATION_STEP_DELAY);
@@ -247,9 +241,9 @@ public class MainScreen extends JFrame {
                 if (!sidebarExpanded) {
                     titleLabel.setText("");
                     toggleButton.setIcon(Theme.getSidebarOpen());
-                } else {
-                    toggleButton.setIcon(Theme.getSidebarClose());
                 }
+                else toggleButton.setIcon(Theme.getSidebarClose());
+
 
                 updateSidebarSelection();
                 sidebarAnimating = false;

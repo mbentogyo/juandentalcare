@@ -96,9 +96,9 @@ public class MainScreen extends JFrame {
         appointmentButton = createSidebarButton("Appointments");
         patientButton = createSidebarButton("Patients");
 
-        dashboardButton.addActionListener(e -> showPanel("Dashboard"));
-        appointmentButton.addActionListener(e -> showPanel("Appointments"));
-        patientButton.addActionListener(e -> showPanel("Patients"));
+        dashboardButton.addActionListener(_ -> showPanel("Dashboard"));
+        appointmentButton.addActionListener(_ -> showPanel("Appointments"));
+        patientButton.addActionListener(_ -> showPanel("Patients"));
 
         sidebarCenter.add(dashboardButton);
         sidebarCenter.add(Box.createVerticalStrut(10));
@@ -219,7 +219,7 @@ public class MainScreen extends JFrame {
         Timer timer = new Timer(SIDEBAR_ANIMATION_STEP_DELAY, null);
         final int[] currentStep = {0};
 
-        timer.addActionListener(e -> {
+        timer.addActionListener(_ -> {
             currentStep[0]++;
             float progress = Math.min((float) currentStep[0] / steps, 1f);
 

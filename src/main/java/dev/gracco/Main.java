@@ -8,7 +8,8 @@ import lombok.Getter;
 import javax.swing.SwingUtilities;
 
 public class Main {
-    @Getter private static final String name = "JuanDentalCare";
+    @Getter private static final String name = "Juan Dental Care";
+
     public static void main(String[] args) {
         System.out.println("Theme initialized: " + Theme.initialize());
         System.out.println("Database initialized: " + Database.initialize());

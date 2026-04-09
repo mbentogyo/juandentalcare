@@ -1,12 +1,15 @@
 package dev.gracco.db;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class Database {
+    private static final Log log = LogFactory.getLog(Database.class);
     private static Connection connection;
 
     public static boolean initialize() {
@@ -18,7 +21,8 @@ public class Database {
         try {
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
         } catch (SQLException e) {
-            //todo: do something
+            System.err.println(e.getMessage());
+            return false;
         }
 
         return true;

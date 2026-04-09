@@ -7,12 +7,12 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
 
-public class AdminPanel extends JPanel {
-    public AdminPanel() {
+public class LogsPanel extends JPanel {
+    public  LogsPanel() {
         setLayout(new BorderLayout());
         setBackground(Theme.WHITE);
 
-        JLabel label = new JLabel("Four");
+        JLabel label = new JLabel("Five");
         label.setHorizontalAlignment(SwingConstants.CENTER);
         label.setForeground(Theme.BLACK);
 

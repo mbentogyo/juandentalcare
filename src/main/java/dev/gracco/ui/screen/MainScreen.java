@@ -2,8 +2,10 @@ package dev.gracco.ui.screen;
 
 import dev.gracco.Main;
 import dev.gracco.ui.Theme;
+import dev.gracco.ui.panels.AdminPanel;
 import dev.gracco.ui.panels.AppointmentPanel;
 import dev.gracco.ui.panels.DashboardPanel;
+import dev.gracco.ui.panels.LogsPanel;
 import dev.gracco.ui.panels.PatientPanel;
 
 import javax.swing.BorderFactory;
@@ -29,6 +31,8 @@ public class MainScreen extends JFrame {
     private static final int COLLAPSED_SIDEBAR_WIDTH = 100;
     private static final int MIN_WINDOW_WIDTH = 1280;
     private static final int MIN_WINDOW_HEIGHT = 720;
+    private static final int SIDEBAR_BUTTON_HEIGHT = 64;
+    private static final boolean INSERT_HERE_THE_BOOLEAN = true;
 
     private final JPanel sidebar;
     private final JPanel contentPanel;
@@ -39,6 +43,8 @@ public class MainScreen extends JFrame {
     private final JButton dashboardButton;
     private final JButton appointmentButton;
     private final JButton patientButton;
+    private final JButton adminButton;
+    private final JButton logsButton;
 
     private boolean sidebarExpanded = true;
     private String selectedPanel = "Dashboard";
@@ -60,11 +66,11 @@ public class MainScreen extends JFrame {
         sidebar = new JPanel(new BorderLayout());
         sidebar.setBackground(Theme.BACKGROUND_GREEN);
         sidebar.setPreferredSize(new Dimension(EXPANDED_SIDEBAR_WIDTH, 0));
-        sidebar.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        sidebar.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         JPanel sidebarTop = new JPanel(new BorderLayout());
-        sidebarTop.setBackground(Theme.BACKGROUND_GREEN);
-        sidebarTop.setBorder(BorderFactory.createEmptyBorder(12, 12, 16, 12));
+        sidebarTop.setBackground(Theme.WHITE);
+        sidebarTop.setBorder(BorderFactory.createEmptyBorder(20, 20, 16, 12));
 
         titleLabel = new JLabel(Main.getName());
         titleLabel.setForeground(Theme.BLACK);
@@ -88,9 +94,9 @@ public class MainScreen extends JFrame {
         sidebarTop.add(toggleButton, BorderLayout.EAST);
 
         JPanel sidebarCenter = new JPanel();
-        sidebarCenter.setBackground(Theme.BACKGROUND_GREEN);
+        sidebarCenter.setBackground(Theme.WHITE);
         sidebarCenter.setLayout(new BoxLayout(sidebarCenter, BoxLayout.Y_AXIS));
-        sidebarCenter.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        sidebarCenter.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         dashboardButton = createSidebarButton("Dashboard");
         appointmentButton = createSidebarButton("Appointments");
@@ -101,22 +107,40 @@ public class MainScreen extends JFrame {
         patientButton.addActionListener(_ -> showPanel("Patients"));
 
         sidebarCenter.add(dashboardButton);
-        sidebarCenter.add(Box.createVerticalStrut(10));
+        sidebarCenter.add(Box.createVerticalStrut(12));
         sidebarCenter.add(appointmentButton);
-        sidebarCenter.add(Box.createVerticalStrut(10));
+        sidebarCenter.add(Box.createVerticalStrut(12));
         sidebarCenter.add(patientButton);
+
+        if (INSERT_HERE_THE_BOOLEAN) {
+            adminButton = createSidebarButton("Admin");
+            logsButton = createSidebarButton("Logs");
+
+            adminButton.addActionListener(_ -> showPanel("Admin"));
+            logsButton.addActionListener(_ -> showPanel("Logs"));
+
+            sidebarCenter.add(Box.createVerticalStrut(12));
+            sidebarCenter.add(adminButton);
+            sidebarCenter.add(Box.createVerticalStrut(12));
+            sidebarCenter.add(logsButton);
+        }
 
         sidebar.add(sidebarTop, BorderLayout.NORTH);
         sidebar.add(sidebarCenter, BorderLayout.CENTER);
 
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
-        contentPanel.setBackground(Theme.WHITE);
+        contentPanel.setBackground(Theme.BACKGROUND_GREEN);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         contentPanel.add(new DashboardPanel(), "Dashboard");
         contentPanel.add(new AppointmentPanel(), "Appointments");
         contentPanel.add(new PatientPanel(), "Patients");
+
+        if (INSERT_HERE_THE_BOOLEAN) {
+            contentPanel.add(new AdminPanel(), "Admin");
+            contentPanel.add(new LogsPanel(), "Logs");
+        }
 
         add(sidebar, BorderLayout.WEST);
         add(contentPanel, BorderLayout.CENTER);
@@ -128,14 +152,15 @@ public class MainScreen extends JFrame {
 
     private JButton createSidebarButton(String text) {
         JButton button = new JButton(text);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        button.setPreferredSize(new Dimension(0, 48));
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, SIDEBAR_BUTTON_HEIGHT));
+        button.setPreferredSize(new Dimension(0, SIDEBAR_BUTTON_HEIGHT));
+        button.setMinimumSize(new Dimension(0, SIDEBAR_BUTTON_HEIGHT));
         button.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         button.setHorizontalAlignment(SwingConstants.LEFT);
         button.setVerticalTextPosition(SwingConstants.CENTER);
         button.setHorizontalTextPosition(SwingConstants.RIGHT);
-        button.setIconTextGap(12);
+        button.setIconTextGap(14);
 
         button.setFocusPainted(false);
         button.setContentAreaFilled(false);
@@ -143,13 +168,13 @@ public class MainScreen extends JFrame {
 
         button.setForeground(Theme.BLACK);
         button.setBackground(Theme.WHITE);
-        button.setFont(Theme.getFont(Theme.FontType.MEDIUM, 14));
+        button.setFont(Theme.getFont(Theme.FontType.MEDIUM, 16));
 
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 4, 0, 0, Theme.SECONDARY),
-                BorderFactory.createEmptyBorder(0, 14, 0, 14)
+                BorderFactory.createEmptyBorder(0, 18, 0, 18)
         ));
 
         button.setBorderPainted(true);
@@ -172,6 +197,13 @@ public class MainScreen extends JFrame {
                 Theme.getAppointmentColor(), Theme.getAppointmentWhite());
         styleSidebarButton(patientButton, selectedPanel.equals("Patients"), "Patients",
                 Theme.getPatientColor(), Theme.getPatientWhite());
+
+        if (INSERT_HERE_THE_BOOLEAN) {
+            styleSidebarButton(adminButton, selectedPanel.equals("Admin"), "Admin",
+                    Theme.getAdminColor(), Theme.getAdminWhite());
+            styleSidebarButton(logsButton, selectedPanel.equals("Logs"), "Logs",
+                    Theme.getLogsColor(), Theme.getLogsWhite());
+        }
     }
 
     private void styleSidebarButton(JButton button, boolean selected, String expandedText, Icon normalIcon, Icon whiteIcon) {
@@ -182,7 +214,7 @@ public class MainScreen extends JFrame {
 
         if (showText) {
             button.setText(expandedText);
-            button.setIconTextGap(12);
+            button.setIconTextGap(14);
         } else {
             button.setText("");
             button.setIconTextGap(0);
@@ -241,9 +273,9 @@ public class MainScreen extends JFrame {
                 if (!sidebarExpanded) {
                     titleLabel.setText("");
                     toggleButton.setIcon(Theme.getSidebarOpen());
+                } else {
+                    toggleButton.setIcon(Theme.getSidebarClose());
                 }
-                else toggleButton.setIcon(Theme.getSidebarClose());
-
 
                 updateSidebarSelection();
                 sidebarAnimating = false;

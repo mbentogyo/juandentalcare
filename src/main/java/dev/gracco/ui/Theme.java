@@ -61,6 +61,8 @@ public class Theme {
     @Getter private static ImageIcon appointmentColor;
     @Getter private static ImageIcon dashboardWhite;
     @Getter private static ImageIcon dashboardColor;
+    @Getter private static ImageIcon logsWhite;
+    @Getter private static ImageIcon logsColor;
     @Getter private static ImageIcon patientWhite;
     @Getter private static ImageIcon patientColor;
     @Getter private static ImageIcon sidebarOpen;
@@ -139,6 +141,8 @@ public class Theme {
         appointmentColor = loadSvgImage("svg/appointment_color.svg", 30, 30);
         dashboardWhite = loadSvgImage("svg/dashboard_white.svg", 30, 30);
         dashboardColor = loadSvgImage("svg/dashboard_color.svg", 30, 30);
+        logsWhite =  loadSvgImage("svg/logs_white.svg", 30, 30);
+        logsColor = loadSvgImage("svg/logs_color.svg", 30, 30);
         patientWhite = loadSvgImage("svg/patient_white.svg", 30, 30);
         patientColor = loadSvgImage("svg/patient_color.svg", 30, 30);
         sidebarOpen = loadSvgImage("svg/sidebar_open.svg", 30, 30);

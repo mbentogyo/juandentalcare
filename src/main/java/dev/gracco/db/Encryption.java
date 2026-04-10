@@ -1,5 +1,7 @@
 package dev.gracco.db;
 
+import dev.gracco.ui.Alert;
+
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.SecureRandom;
@@ -44,7 +46,7 @@ public class Encryption {
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             hash = factory.generateSecret(spec).getEncoded();
         } catch (Exception e) {
-            //todo: send error
+            Alert.fatalError(e.getMessage());
             return null;
         }
 
@@ -92,7 +94,7 @@ public class Encryption {
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             enteredPasswordHash = factory.generateSecret(spec).getEncoded();
         } catch (Exception e) {
-            //todo: send error
+            Alert.fatalError(e.getMessage());
             return false;
         }
         return java.util.Arrays.equals(storedPasswordHash, enteredPasswordHash);

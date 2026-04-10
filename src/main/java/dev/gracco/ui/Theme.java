@@ -115,7 +115,8 @@ public class Theme {
             return new ImageIcon(transcoder.getImage());
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to load SVG: " + resourcePath, e);
+            Alert.fatalError(e.getMessage());
+            return null;
         }
     }
 
@@ -130,6 +131,7 @@ public class Theme {
                 Font font = Font.createFont(Font.TRUETYPE_FONT, is);
                 FONT_CACHE.put(type, font);
             } catch (Exception e) {
+                Alert.fatalError(e.getMessage());
                 return false;
             }
         }

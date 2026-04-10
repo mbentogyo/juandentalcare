@@ -1,5 +1,6 @@
 package dev.gracco.db;
 
+import dev.gracco.ui.Alert;
 import io.github.cdimascio.dotenv.Dotenv;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,10 +23,17 @@ public class Database {
         try {
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
         } catch (SQLException e) {
-            System.err.println("Error with database: " + e.getMessage());
-            return false;
+            Alert.fatalError(e.getMessage());
         }
 
         return true;
+    }
+
+    public static void shutdown(){
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            Alert.fatalError(e.getMessage());
+        }
     }
 }

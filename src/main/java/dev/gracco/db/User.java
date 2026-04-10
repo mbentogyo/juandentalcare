@@ -85,7 +85,7 @@ public class User {
 
             Logs.logToDatabase(
                     Enums.ActionType.UPDATE,
-                    "users",
+                    Enums.Tables.USERS,
                     userId,
                     "User changed their password"
             );

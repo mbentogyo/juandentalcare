@@ -4,26 +4,33 @@ import dev.gracco.db.Logs;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.Theme.FontType;
 import dev.gracco.ui.element.DashboardHeaderRenderer;
+import dev.gracco.ui.element.JRoundedButton;
 import dev.gracco.ui.element.RoundedPanel;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class LogsPanel extends JPanel {
-    private static final int PAGE_SIZE = 15;
+    private static final int PAGE_SIZE = 10;
     private static final String[] TABLE_COLUMNS = {
             "Log ID",
             "User ID",
@@ -39,9 +46,10 @@ public class LogsPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final JTable table;
+    private final JScrollPane scrollPane;
 
-    private final JButton previousButton;
-    private final JButton nextButton;
+    private final JRoundedButton previousButton;
+    private final JRoundedButton nextButton;
     private final JLabel pageLabel;
 
     private int currentPage = 0;
@@ -60,12 +68,18 @@ public class LogsPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
-
         configureTable();
 
-        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(Theme.SECONDARY, 2));
         scrollPane.getViewport().setBackground(Theme.WHITE);
+
+        scrollPane.getViewport().addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateRowHeight();
+            }
+        });
 
         previousButton = createPaginationButton("Previous");
         nextButton = createPaginationButton("Next");
@@ -93,6 +107,8 @@ public class LogsPanel extends JPanel {
         add(tableWrapper, BorderLayout.CENTER);
 
         loadPage(0);
+
+        SwingUtilities.invokeLater(this::updateRowHeight);
     }
 
     private JPanel createHeader() {
@@ -110,6 +126,30 @@ public class LogsPanel extends JPanel {
 
         textWrapper.add(title);
         header.add(textWrapper, BorderLayout.WEST);
+
+        JRoundedButton refreshButton = new JRoundedButton("Refresh", 10);
+        refreshButton.setBackground(Theme.ACCENT);
+        refreshButton.setForeground(Theme.WHITE);
+        refreshButton.setFocusPainted(false);
+        refreshButton.setFont(Theme.getFont(FontType.SEMI_BOLD, 14));
+        refreshButton.setBorder(BorderFactory.createEmptyBorder(10, 18, 10, 18));
+        refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        refreshButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                refreshButton.setBackground(Theme.ACCENT_HOVER);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                refreshButton.setBackground(Theme.ACCENT);
+            }
+        });
+
+        refreshButton.addActionListener(e -> loadPage(currentPage));
+
+        header.add(refreshButton, BorderLayout.EAST);
 
         return header;
     }
@@ -142,8 +182,8 @@ public class LogsPanel extends JPanel {
         return tableCard;
     }
 
-    private JButton createPaginationButton(String text) {
-        JButton button = new JButton(text);
+    private JRoundedButton createPaginationButton(String text) {
+        JRoundedButton button = new JRoundedButton(text, 10);
         button.setFocusPainted(false);
         button.setFont(Theme.getFont(FontType.MEDIUM, 13f));
         button.setBackground(Theme.WHITE);
@@ -152,11 +192,11 @@ public class LogsPanel extends JPanel {
                 BorderFactory.createLineBorder(Theme.SECONDARY, 2),
                 BorderFactory.createEmptyBorder(8, 14, 8, 14)
         ));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
 
     private void configureTable() {
-        table.setRowHeight(36);
         table.setBackground(Theme.WHITE);
         table.setForeground(Theme.BLACK);
         table.setGridColor(Theme.SECONDARY);
@@ -186,10 +226,12 @@ public class LogsPanel extends JPanel {
     }
 
     private void loadPage(int page) {
+        currentPage = page;
         Object[][] data = Logs.getLogsPage(page);
         setTableData(data);
         currentRowCount = data.length;
         updatePaginationState();
+        updateRowHeight();
     }
 
     private void setTableData(Object[][] data) {
@@ -208,5 +250,15 @@ public class LogsPanel extends JPanel {
         pageLabel.setText("Page " + (currentPage + 1));
         previousButton.setEnabled(currentPage > 0);
         nextButton.setEnabled(currentRowCount >= PAGE_SIZE);
+    }
+
+    private void updateRowHeight() {
+        JViewport viewport = scrollPane.getViewport();
+        int viewportHeight = viewport.getHeight();
+
+        if (viewportHeight > 0) {
+            int rowHeight = Math.max(1, viewportHeight / PAGE_SIZE);
+            table.setRowHeight(rowHeight);
+        }
     }
 }

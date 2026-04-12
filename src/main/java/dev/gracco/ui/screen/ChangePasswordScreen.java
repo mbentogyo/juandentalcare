@@ -97,17 +97,21 @@ public class ChangePasswordScreen extends JFrame {
 
         enterButton.addActionListener(_ -> {
             String newPassword = new String(passwordField.getPassword());
+            enterButton.setEnabled(false);
 
-            if (!newPassword.isBlank() && User.changePassword(newPassword)) {
+            if (!newPassword.isBlank() && newPassword.length() > 7 && User.changePassword(newPassword)) {
                 Alert.success("Successfully changed your password. Redirecting...", this);
 
-                new javax.swing.Timer(3500, _ -> {
+                new javax.swing.Timer(3000, _ -> {
                     new MainScreen();
                     this.dispose();
                 }) {{
                     setRepeats(false);
                     start();
                 }};
+            } else {
+                Alert.error("Invalid password, try again!", this);
+                enterButton.setEnabled(true);
             }
         });
 

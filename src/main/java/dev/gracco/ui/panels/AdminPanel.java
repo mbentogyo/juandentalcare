@@ -7,25 +7,34 @@ import dev.gracco.ui.element.DashboardHeaderRenderer;
 import dev.gracco.ui.element.RoundedPanel;
 import dev.gracco.ui.element.JRoundedButton;
 import dev.gracco.ui.screen.AddUserScreen;
+import dev.gracco.ui.screen.EditUserScreen;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class AdminPanel extends JPanel {
+    private static final int PAGE_SIZE = 10;
+
     private static final String[] TABLE_COLUMNS = {
             "User ID",
             "Username",
@@ -42,6 +51,14 @@ public class AdminPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final JTable table;
+    private final JScrollPane scrollPane;
+
+    private final JRoundedButton previousButton;
+    private final JRoundedButton nextButton;
+    private final JLabel pageLabel;
+
+    private int currentPage = 0;
+    private int currentRowCount = 0;
 
     public AdminPanel() {
         setLayout(new BorderLayout(20, 20));
@@ -56,19 +73,47 @@ public class AdminPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
-
         configureTable();
 
-        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(Theme.SECONDARY, 2));
         scrollPane.getViewport().setBackground(Theme.WHITE);
+
+        scrollPane.getViewport().addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateRowHeight();
+            }
+        });
+
+        previousButton = createPaginationButton("Previous");
+        nextButton = createPaginationButton("Next");
+        pageLabel = new JLabel();
+        pageLabel.setFont(Theme.getFont(FontType.MEDIUM, 14f));
+        pageLabel.setForeground(Theme.BLACK);
+
+        previousButton.addActionListener(e -> {
+            if (currentPage > 0) {
+                currentPage--;
+                loadPage(currentPage);
+            }
+        });
+
+        nextButton.addActionListener(e -> {
+            if (currentRowCount == PAGE_SIZE) {
+                currentPage++;
+                loadPage(currentPage);
+            }
+        });
 
         JPanel tableWrapper = createTableCard(scrollPane);
 
         add(createHeader(), BorderLayout.NORTH);
         add(tableWrapper, BorderLayout.CENTER);
 
-        loadTableData();
+        loadPage(0);
+
+        SwingUtilities.invokeLater(this::updateRowHeight);
     }
 
     private JPanel createHeader() {
@@ -109,7 +154,36 @@ public class AdminPanel extends JPanel {
 
         addButton.addActionListener(_ -> AddUserScreen.open());
 
-        header.add(addButton, BorderLayout.EAST);
+        JRoundedButton refreshButton = new JRoundedButton("Refresh", 10);
+        refreshButton.setBackground(Theme.ACCENT);
+        refreshButton.setForeground(Theme.WHITE);
+        refreshButton.setFocusPainted(false);
+        refreshButton.setFont(Theme.getFont(Theme.FontType.SEMI_BOLD, 14));
+        refreshButton.setBorder(new EmptyBorder(10, 18, 10, 18));
+        refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        refreshButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                refreshButton.setBackground(Theme.ACCENT_HOVER);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                refreshButton.setBackground(Theme.ACCENT);
+            }
+        });
+
+        refreshButton.addActionListener(_ -> loadPage(currentPage));
+
+        JPanel buttonWrapper = new JPanel();
+        buttonWrapper.setLayout(new BoxLayout(buttonWrapper, BoxLayout.X_AXIS));
+        buttonWrapper.setBackground(Theme.WHITE);
+        buttonWrapper.add(refreshButton);
+        buttonWrapper.add(Box.createHorizontalStrut(10));
+        buttonWrapper.add(addButton);
+
+        header.add(buttonWrapper, BorderLayout.EAST);
 
         return header;
     }
@@ -124,14 +198,39 @@ public class AdminPanel extends JPanel {
         titleLabel.setForeground(Theme.BLACK);
         titleLabel.setFont(Theme.getFont(FontType.MEDIUM, 16f));
 
+        JPanel paginationPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        paginationPanel.setBackground(Theme.WHITE);
+        paginationPanel.add(previousButton);
+        paginationPanel.add(pageLabel);
+        paginationPanel.add(nextButton);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBackground(Theme.WHITE);
+        bottomPanel.add(Box.createVerticalStrut(4), BorderLayout.NORTH);
+        bottomPanel.add(paginationPanel, BorderLayout.EAST);
+
         tableCard.add(titleLabel, BorderLayout.NORTH);
         tableCard.add(scrollPane, BorderLayout.CENTER);
+        tableCard.add(bottomPanel, BorderLayout.SOUTH);
 
         return tableCard;
     }
 
+    private JRoundedButton createPaginationButton(String text) {
+        JRoundedButton button = new JRoundedButton(text, 10);
+        button.setFocusPainted(false);
+        button.setFont(Theme.getFont(FontType.MEDIUM, 13f));
+        button.setBackground(Theme.WHITE);
+        button.setForeground(Theme.BLACK);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.SECONDARY, 2),
+                BorderFactory.createEmptyBorder(8, 14, 8, 14)
+        ));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
     private void configureTable() {
-        table.setRowHeight(36);
         table.setBackground(Theme.WHITE);
         table.setForeground(Theme.BLACK);
         table.setGridColor(Theme.SECONDARY);
@@ -158,10 +257,27 @@ public class AdminPanel extends JPanel {
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && table.getSelectedRow() != -1) {
+                    int selectedRow = table.getSelectedRow();
+                    int modelRow = table.convertRowIndexToModel(selectedRow);
+                    int userId = (int) tableModel.getValueAt(modelRow, 0);
+                    EditUserScreen.open(userId);
+                }
+            }
+        });
     }
 
-    private void loadTableData() {
-        setTableData(Admin.getAdmins());
+    private void loadPage(int page) {
+        currentPage = page;
+        Object[][] data = Admin.getAdmins(page);
+        setTableData(data);
+        currentRowCount = data.length;
+        updatePaginationState();
+        updateRowHeight();
     }
 
     private void setTableData(Object[][] data) {
@@ -173,6 +289,22 @@ public class AdminPanel extends JPanel {
 
         for (Object[] row : data) {
             tableModel.addRow(row);
+        }
+    }
+
+    private void updatePaginationState() {
+        pageLabel.setText("Page " + (currentPage + 1));
+        previousButton.setEnabled(currentPage > 0);
+        nextButton.setEnabled(currentRowCount >= PAGE_SIZE);
+    }
+
+    private void updateRowHeight() {
+        JViewport viewport = scrollPane.getViewport();
+        int viewportHeight = viewport.getHeight();
+
+        if (viewportHeight > 0) {
+            int rowHeight = Math.max(1, viewportHeight / PAGE_SIZE);
+            table.setRowHeight(rowHeight);
         }
     }
 }

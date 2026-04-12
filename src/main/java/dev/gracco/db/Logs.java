@@ -3,10 +3,15 @@ package dev.gracco.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Logs {
+    private static final int PAGE_SIZE = 10;
+
     public static void logToDatabase(Enums.ActionType actionType, Enums.Tables tableName, Integer recordId, String description) {
         String sql = """
                 INSERT INTO activity_logs (user_id, action_type, table_name, record_id, action_description)
@@ -51,13 +56,13 @@ public class Logs {
                 FROM activity_logs al
                 INNER JOIN users u ON al.user_id = u.user_id
                 ORDER BY al.action_timestamp DESC, al.log_id DESC
-                LIMIT 15 OFFSET ?
+                LIMIT 10 OFFSET ?
                 """;
 
         List<Object[]> rows = new ArrayList<>();
 
         try (PreparedStatement statement = Database.getConnection().prepareStatement(sql)) {
-            statement.setInt(1, page * 15);
+            statement.setInt(1, page * PAGE_SIZE);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
@@ -71,7 +76,7 @@ public class Logs {
                             resultSet.getString("table_name"),
                             resultSet.getObject("record_id"),
                             resultSet.getString("action_description"),
-                            resultSet.getTimestamp("action_timestamp")
+                            formatDateTime(resultSet.getTimestamp("action_timestamp"))
                     });
                 }
             }
@@ -80,5 +85,15 @@ public class Logs {
         }
 
         return rows.toArray(new Object[0][]);
+    }
+
+    private static String formatDateTime(Timestamp timestamp) {
+        if (timestamp == null) {
+            return "";
+        }
+
+        LocalDateTime dateTime = timestamp.toLocalDateTime();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm a");
+        return dateTime.format(formatter);
     }
 }

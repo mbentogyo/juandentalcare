@@ -30,19 +30,12 @@ public class User {
             statement.setString(1, usernameInput);
 
             try (var resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return "User does not exist";
-                }
+                if (!resultSet.next()) return "Incorrect username or password.";
 
                 String passwordHash = resultSet.getString("password_hash");
 
-                if (!Encryption.decrypt(password, passwordHash)) {
-                    return "Incorrect password";
-                }
-
-                if (!resultSet.getBoolean("is_active")) {
-                    return "User is set as inactive. Contact your administrator";
-                }
+                if (!Encryption.decrypt(password, passwordHash)) return "Incorrect username or password.";
+                if (!resultSet.getBoolean("is_active")) return "User is set as inactive. Contact your administrator";
 
                 userId = resultSet.getInt("user_id");
                 username = resultSet.getString("username");

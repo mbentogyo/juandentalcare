@@ -8,12 +8,10 @@ public class Enums {
     }
 
     public enum Role {
-        ADMIN, DENTIST, CLERK;
+        CLERK, DENTIST, ADMIN;
 
         public static Role fromString(String value) {
-            if (value == null) {
-                return null;
-            }
+            if (value == null) return null;
 
             for (Role role : Role.values()) {
                 if (role.name().equalsIgnoreCase(value.trim())) {

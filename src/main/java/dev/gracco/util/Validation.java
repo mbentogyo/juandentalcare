@@ -12,8 +12,13 @@ public class Validation {
     public static final Pattern PHONE_NUMBER_REGEX = Pattern.compile("^\\+?\\d+$");
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm:ss a");
 
-    public static String formatDateTime(String input) {
-        LocalDateTime dateTime = Timestamp.valueOf(input).toLocalDateTime();
+    public static String formatDateTime(Timestamp timestamp) {
+        if (timestamp == null) {
+            return "";
+        }
+
+        LocalDateTime dateTime = timestamp.toLocalDateTime();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm a");
         return dateTime.format(formatter);
     }
 }

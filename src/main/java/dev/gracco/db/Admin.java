@@ -1,6 +1,7 @@
 package dev.gracco.db;
 
 import dev.gracco.ui.Alert;
+import dev.gracco.util.Validation;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,8 +45,8 @@ public class Admin {
                             resultSet.getString("email"),
                             resultSet.getString("contact_number"),
                             resultSet.getBoolean("is_active"),
-                            formatDateTime(resultSet.getTimestamp("created_at")),
-                            formatDateTime(resultSet.getTimestamp("updated_at"))
+                            Validation.formatDateTime(resultSet.getTimestamp("created_at")),
+                            Validation.formatDateTime(resultSet.getTimestamp("updated_at"))
                     });
                 }
             }
@@ -223,15 +224,5 @@ public class Admin {
             Alert.fatalError(e.getMessage());
             return "Database error.";
         }
-    }
-
-    private static String formatDateTime(Timestamp timestamp) {
-        if (timestamp == null) {
-            return "";
-        }
-
-        LocalDateTime dateTime = timestamp.toLocalDateTime();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm a");
-        return dateTime.format(formatter);
     }
 }

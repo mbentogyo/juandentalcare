@@ -1,5 +1,7 @@
 package dev.gracco.db;
 
+import dev.gracco.util.Validation;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -76,7 +78,7 @@ public class Logs {
                             resultSet.getString("table_name"),
                             resultSet.getObject("record_id"),
                             resultSet.getString("action_description"),
-                            formatDateTime(resultSet.getTimestamp("action_timestamp"))
+                            Validation.formatDateTime(resultSet.getTimestamp("action_timestamp"))
                     });
                 }
             }
@@ -85,15 +87,5 @@ public class Logs {
         }
 
         return rows.toArray(new Object[0][]);
-    }
-
-    private static String formatDateTime(Timestamp timestamp) {
-        if (timestamp == null) {
-            return "";
-        }
-
-        LocalDateTime dateTime = timestamp.toLocalDateTime();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm a");
-        return dateTime.format(formatter);
     }
 }

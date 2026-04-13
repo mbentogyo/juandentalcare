@@ -1,5 +1,26 @@
 package dev.gracco.ui.screen;
 
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
 import dev.gracco.Main;
 import dev.gracco.db.Database;
 import dev.gracco.db.Enums;
@@ -9,24 +30,6 @@ import dev.gracco.ui.panels.AppointmentPanel;
 import dev.gracco.ui.panels.DashboardPanel;
 import dev.gracco.ui.panels.LogsPanel;
 import dev.gracco.ui.panels.PatientPanel;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
-import javax.swing.Timer;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 public class MainScreen extends JFrame {
     private static final int EXPANDED_SIDEBAR_WIDTH = 320;
@@ -128,6 +131,42 @@ public class MainScreen extends JFrame {
 
         sidebar.add(sidebarTop, BorderLayout.NORTH);
         sidebar.add(sidebarCenter, BorderLayout.CENTER);
+
+        // Logout button at the bottom of sidebar
+        JPanel sidebarBottom = new JPanel();
+        sidebarBottom.setBackground(Theme.WHITE);
+        sidebarBottom.setLayout(new BoxLayout(sidebarBottom, BoxLayout.Y_AXIS));
+        sidebarBottom.setBorder(BorderFactory.createEmptyBorder(8, 8, 16, 8));
+
+        JButton logoutButton = createSidebarButton("Logout");
+        logoutButton.setBackground(new java.awt.Color(252, 238, 238));
+        logoutButton.setForeground(new java.awt.Color(180, 30, 30));
+        logoutButton.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 4, 0, 0, new java.awt.Color(220, 80, 80)),
+                BorderFactory.createEmptyBorder(0, 18, 0, 18)
+        ));
+        logoutButton.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) {
+                logoutButton.setBackground(new java.awt.Color(248, 215, 215));
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                logoutButton.setBackground(new java.awt.Color(252, 238, 238));
+            }
+        });
+        logoutButton.addActionListener(_ -> {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to log out?", "Logout",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (confirm == JOptionPane.YES_OPTION) {
+                Database.shutdown();
+                Database.initialize();
+                dispose();
+                SwingUtilities.invokeLater(LoginScreen::new);
+            }
+        });
+
+        sidebarBottom.add(logoutButton);
+        sidebar.add(sidebarBottom, BorderLayout.SOUTH);
 
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);

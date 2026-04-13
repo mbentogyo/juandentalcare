@@ -1,11 +1,5 @@
 package dev.gracco.db;
 
-import dev.gracco.ui.Alert;
-import dev.gracco.util.Validation;
-import io.github.cdimascio.dotenv.Dotenv;
-import lombok.AccessLevel;
-import lombok.Getter;
-
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -14,6 +8,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import dev.gracco.ui.Alert;
+import dev.gracco.util.Validation;
+import io.github.cdimascio.dotenv.Dotenv;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 public class Database {
     @Getter(AccessLevel.PROTECTED)
@@ -437,6 +437,226 @@ public class Database {
         }
     }
 
+    public static class Appointment {
+        private static final int PAGE_SIZE = 10;
+
+        public static Object[][] getAppointments(int page, Integer dentistFilter) {
+            if (page < 0) throw new IllegalArgumentException("Page cannot be negative");
+
+            StringBuilder sql = new StringBuilder("""
+                    SELECT a.appointment_id, p.first_name, p.last_name, u.first_name, u.last_name,
+                           a.scheduled_date, a.scheduled_time, a.status_id, a.reason_for_visit, a.notes,
+                           a.patient_id, a.dentist_user_id
+                    FROM appointments a
+                    INNER JOIN patients p ON a.patient_id = p.patient_id
+                    INNER JOIN users u ON a.dentist_user_id = u.user_id
+                    WHERE 1=1
+                    """);
+
+            List<Object> params = new ArrayList<>();
+            if (dentistFilter != null) {
+                sql.append(" AND a.dentist_user_id = ?");
+                params.add(dentistFilter);
+            }
+            sql.append(" ORDER BY a.scheduled_date DESC, a.scheduled_time DESC LIMIT ? OFFSET ?");
+            params.add(PAGE_SIZE);
+            params.add(page * PAGE_SIZE);
+
+            List<Object[]> rows = new ArrayList<>();
+            try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+                for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+                try (ResultSet rs = st.executeQuery()) {
+                    while (rs.next()) {
+                        rows.add(new Object[]{
+                                rs.getInt("appointment_id"),
+                                rs.getString(2) + " " + rs.getString(3),
+                                rs.getString(4) + " " + rs.getString(5),
+                                Validation.formatDate(rs.getDate("scheduled_date")),
+                                rs.getString("scheduled_time"),
+                                rs.getString("status_id"),
+                                rs.getString("reason_for_visit"),
+                                rs.getString("notes"),
+                                rs.getInt("patient_id"),
+                                rs.getInt("dentist_user_id")
+                        });
+                    }
+                }
+                return rows.toArray(new Object[0][]);
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+                return new Object[0][0];
+            }
+        }
+
+        public static Object[] getAppointmentById(int id) {
+            String sql = """
+                    SELECT appointment_id, patient_id, dentist_user_id, scheduled_date, scheduled_time,
+                           status_id, reason_for_visit, notes
+                    FROM appointments WHERE appointment_id = ? LIMIT 1
+                    """;
+            try (PreparedStatement st = connection.prepareStatement(sql)) {
+                st.setInt(1, id);
+                try (ResultSet rs = st.executeQuery()) {
+                    if (!rs.next()) return null;
+                    return new Object[]{
+                            rs.getInt("appointment_id"),
+                            rs.getInt("patient_id"),
+                            rs.getInt("dentist_user_id"),
+                            rs.getDate("scheduled_date"),
+                            rs.getString("scheduled_time"),
+                            rs.getString("status_id"),
+                            rs.getString("reason_for_visit"),
+                            rs.getString("notes")
+                    };
+                }
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+                return null;
+            }
+        }
+
+        public static String addAppointment(int patientId, int dentistUserId, java.sql.Date scheduledDate,
+                                            String scheduledTime, String status, String reason, String notes) {
+            String sql = """
+                    INSERT INTO appointments (patient_id, dentist_user_id, scheduled_date, scheduled_time,
+                        status_id, reason_for_visit, notes, created_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """;
+            try (PreparedStatement st = connection.prepareStatement(sql)) {
+                st.setInt(1, patientId);
+                st.setInt(2, dentistUserId);
+                st.setDate(3, scheduledDate);
+                st.setString(4, scheduledTime);
+                st.setString(5, status);
+                st.setString(6, reason);
+                st.setString(7, notes.isBlank() ? null : notes);
+                st.setInt(8, User.getUserId());
+                if (st.executeUpdate() == 0) return "Failed to add appointment.";
+                Logs.logToDatabase(Enums.ActionType.CREATE, Enums.Tables.APPOINTMENTS, null,
+                        "Added appointment for patient ID: " + patientId);
+                return null;
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+                return "Database error.";
+            }
+        }
+
+        public static String updateAppointment(int appointmentId, int patientId, int dentistUserId,
+                                               java.sql.Date scheduledDate, String scheduledTime,
+                                               String status, String reason, String notes) {
+            String sql = """
+                    UPDATE appointments SET patient_id=?, dentist_user_id=?, scheduled_date=?,
+                        scheduled_time=?, status_id=?, reason_for_visit=?, notes=?, updated_by=?
+                    WHERE appointment_id=?
+                    """;
+            try (PreparedStatement st = connection.prepareStatement(sql)) {
+                st.setInt(1, patientId);
+                st.setInt(2, dentistUserId);
+                st.setDate(3, scheduledDate);
+                st.setString(4, scheduledTime);
+                st.setString(5, status);
+                st.setString(6, reason);
+                st.setString(7, notes.isBlank() ? null : notes);
+                st.setInt(8, User.getUserId());
+                st.setInt(9, appointmentId);
+                if (st.executeUpdate() == 0) return "Failed to update appointment.";
+                Logs.logToDatabase(Enums.ActionType.UPDATE, Enums.Tables.APPOINTMENTS, appointmentId,
+                        "Updated appointment ID: " + appointmentId);
+                return null;
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+                return "Database error.";
+            }
+        }
+
+        public static int[] getDashboardStats() {
+            String sql = """
+                    SELECT
+                        SUM(CASE WHEN scheduled_date = CURDATE() THEN 1 ELSE 0 END) AS today,
+                        SUM(CASE WHEN scheduled_date = CURDATE() AND status_id = 'Confirmed' THEN 1 ELSE 0 END) AS completed,
+                        SUM(CASE WHEN scheduled_date = CURDATE() AND status_id IN ('Booked','Rescheduled') THEN 1 ELSE 0 END) AS remaining,
+                        SUM(CASE WHEN scheduled_date = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS tomorrow,
+                        SUM(CASE WHEN scheduled_date = CURDATE() AND status_id = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled,
+                        SUM(CASE WHEN scheduled_date = CURDATE() AND status_id = 'No Show' THEN 1 ELSE 0 END) AS noshow
+                    FROM appointments
+                    """;
+            try (PreparedStatement st = connection.prepareStatement(sql);
+                 ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return new int[]{
+                            rs.getInt("today"), rs.getInt("completed"), rs.getInt("remaining"),
+                            rs.getInt("tomorrow"), rs.getInt("cancelled"), rs.getInt("noshow")
+                    };
+                }
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+            }
+            return new int[]{0, 0, 0, 0, 0, 0};
+        }
+
+        public static Object[][] getTodayAppointments() {
+            String sql = """
+                    SELECT a.appointment_id, p.first_name, p.last_name, u.first_name, u.last_name,
+                           a.scheduled_time, a.status_id, a.reason_for_visit
+                    FROM appointments a
+                    INNER JOIN patients p ON a.patient_id = p.patient_id
+                    INNER JOIN users u ON a.dentist_user_id = u.user_id
+                    WHERE a.scheduled_date = CURDATE()
+                    ORDER BY a.scheduled_time ASC
+                    """;
+            List<Object[]> rows = new ArrayList<>();
+            try (PreparedStatement st = connection.prepareStatement(sql);
+                 ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(new Object[]{
+                            rs.getInt("appointment_id"),
+                            rs.getString(2) + " " + rs.getString(3),
+                            rs.getString(4) + " " + rs.getString(5),
+                            rs.getString("scheduled_time"),
+                            rs.getString("status_id"),
+                            rs.getString("reason_for_visit")
+                    });
+                }
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+            }
+            return rows.toArray(new Object[0][]);
+        }
+
+        public static Object[][] getDentists() {
+            String sql = """
+                    SELECT user_id, first_name, last_name FROM users
+                    WHERE role_id = 'Dentist' AND is_active = TRUE ORDER BY first_name ASC
+                    """;
+            List<Object[]> rows = new ArrayList<>();
+            try (PreparedStatement st = connection.prepareStatement(sql);
+                 ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(new Object[]{rs.getInt("user_id"),
+                            rs.getString("first_name") + " " + rs.getString("last_name")});
+                }
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+            }
+            return rows.toArray(new Object[0][]);
+        }
+
+        public static Object[][] getPatientList() {
+            String sql = "SELECT patient_id, first_name, last_name FROM patients ORDER BY first_name ASC";
+            List<Object[]> rows = new ArrayList<>();
+            try (PreparedStatement st = connection.prepareStatement(sql);
+                 ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(new Object[]{rs.getInt("patient_id"),
+                            rs.getString("first_name") + " " + rs.getString("last_name")});
+                }
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+            }
+            return rows.toArray(new Object[0][]);
+        }
+    }
+
     public static class Patient {
         private static final int PAGE_SIZE = 10;
 
@@ -541,6 +761,55 @@ public class Database {
             } catch (SQLException e) {
                 Alert.fatalError(e.getMessage());
                 return new Object[0][0];
+            }
+        }
+
+        public static Object[] getPatientById(int patientId) {
+            String sql = """
+                    SELECT patient_id, first_name, last_name, birth_date, sex, contact_number, email, address
+                    FROM patients WHERE patient_id = ? LIMIT 1
+                    """;
+            try (PreparedStatement st = connection.prepareStatement(sql)) {
+                st.setInt(1, patientId);
+                try (ResultSet rs = st.executeQuery()) {
+                    if (!rs.next()) return null;
+                    return new Object[]{
+                            rs.getInt("patient_id"), rs.getString("first_name"), rs.getString("last_name"),
+                            rs.getDate("birth_date"), rs.getString("sex"), rs.getString("contact_number"),
+                            rs.getString("email"), rs.getString("address")
+                    };
+                }
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+                return null;
+            }
+        }
+
+        public static String updatePatient(int patientId, String firstName, String lastName, Date birthDate,
+                                           String sex, String contactNumber, String email, String address) {
+            String sql = """
+                    UPDATE patients SET first_name=?, last_name=?, birth_date=?, sex=?,
+                        contact_number=?, email=?, address=?, updated_at=CURRENT_TIMESTAMP
+                    WHERE patient_id=?
+                    """;
+            try (PreparedStatement st = connection.prepareStatement(sql)) {
+                st.setString(1, firstName);
+                st.setString(2, lastName);
+                st.setDate(3, birthDate);
+                st.setString(4, sex);
+                st.setString(5, contactNumber);
+                st.setString(6, email);
+                st.setString(7, address);
+                st.setInt(8, patientId);
+                if (st.executeUpdate() == 0) return "Failed to update patient.";
+                Logs.logToDatabase(Enums.ActionType.UPDATE, Enums.Tables.PATIENTS, patientId,
+                        "Updated patient: " + firstName + " " + lastName);
+                return null;
+            } catch (SQLException e) {
+                if (e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate"))
+                    return "Patient already exists.";
+                Alert.fatalError(e.getMessage());
+                return "Database error.";
             }
         }
 

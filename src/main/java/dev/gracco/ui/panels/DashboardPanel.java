@@ -1,9 +1,14 @@
 package dev.gracco.ui.panels;
 
-import dev.gracco.ui.Theme;
-import dev.gracco.ui.Theme.FontType;
-import dev.gracco.ui.element.DashboardHeaderRenderer;
-import dev.gracco.ui.element.RoundedPanel;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -18,18 +23,15 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import dev.gracco.db.Database;
+import dev.gracco.ui.Theme;
+import dev.gracco.ui.Theme.FontType;
+import dev.gracco.ui.element.DashboardHeaderRenderer;
+import dev.gracco.ui.element.RoundedPanel;
 
 public class DashboardPanel extends JPanel {
-    private static final String[] TABLE_COLUMNS = {"One", "Two", "Three", "Four", "Five"};
+    private static final String[] TABLE_COLUMNS = {"ID", "Patient", "Dentist", "Time", "Status", "Reason"};
 
     private final JLabel todayAppointmentsValue;
     private final JLabel completedTodayValue;
@@ -65,11 +67,7 @@ public class DashboardPanel extends JPanel {
         infoPanel.add(createStatCard("Cancelled Today", cancelledTodayValue, new Color(231, 76, 60)));
         infoPanel.add(createStatCard("Walk in", walkInValue, new Color(230, 126, 34)));
 
-        Object[][] data = {
-                {"A", "B", "C", "D", "E"},
-                {"F", "G", "H", "I", "J"},
-                {"K", "L", "M", "N", "O"}
-        };
+        Object[][] data = new Object[0][0];
 
         tableModel = new DefaultTableModel(data, TABLE_COLUMNS) {
             @Override
@@ -98,6 +96,16 @@ public class DashboardPanel extends JPanel {
 
         add(topWrapper, BorderLayout.NORTH);
         add(tableWrapper, BorderLayout.CENTER);
+
+        loadDashboardData();
+    }
+
+    private void loadDashboardData() {
+        int[] stats = Database.Appointment.getDashboardStats();
+        updateDashboardData(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
+        Object[][] todayRows = Database.Appointment.getTodayAppointments();
+        tableModel.setRowCount(0);
+        for (Object[] row : todayRows) tableModel.addRow(row);
     }
 
     private JPanel createHeader() {
@@ -123,7 +131,7 @@ public class DashboardPanel extends JPanel {
         welcome.setFont(Theme.getFont(FontType.MEDIUM, 16f));
         welcome.setForeground(Theme.BLACK);
 
-        JLabel name = new JLabel("Tester");
+        JLabel name = new JLabel(Database.User.getFirstName());
         name.setFont(Theme.getFont(FontType.SEMI_BOLD, 16f));
         name.setForeground(Theme.BLACK);
 
@@ -284,7 +292,7 @@ public class DashboardPanel extends JPanel {
         tableCard.setBackground(Theme.WHITE);
         tableCard.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        JLabel titleLabel = new JLabel("Table");
+        JLabel titleLabel = new JLabel("Today's Appointments");
         titleLabel.setForeground(Theme.BLACK);
         titleLabel.setFont(Theme.getFont(FontType.MEDIUM, 16f));
 

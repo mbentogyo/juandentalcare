@@ -1,12 +1,23 @@
 package dev.gracco.ui.panels;
 
-import dev.gracco.db.Database;
-import dev.gracco.ui.Theme;
-import dev.gracco.ui.Theme.FontType;
-import dev.gracco.ui.element.DashboardHeaderRenderer;
-import dev.gracco.ui.element.JRoundedButton;
-import dev.gracco.ui.element.RoundedPanel;
-import dev.gracco.ui.screen.AddPatientScreen;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.Window;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -29,24 +40,15 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.awt.Point;
-import java.awt.Window;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
+
+import dev.gracco.db.Database;
+import dev.gracco.ui.Theme;
+import dev.gracco.ui.Theme.FontType;
+import dev.gracco.ui.element.DashboardHeaderRenderer;
+import dev.gracco.ui.element.JRoundedButton;
+import dev.gracco.ui.element.RoundedPanel;
+import dev.gracco.ui.screen.AddPatientScreen;
+import dev.gracco.ui.screen.EditPatientScreen;
 
 public class PatientPanel extends JPanel {
     private static final int PAGE_SIZE = 10;
@@ -502,6 +504,16 @@ public class PatientPanel extends JPanel {
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && table.getSelectedRow() != -1) {
+                    int modelRow = table.convertRowIndexToModel(table.getSelectedRow());
+                    int patientId = (int) tableModel.getValueAt(modelRow, 0);
+                    EditPatientScreen.open(patientId);
+                }
+            }
+        });
     }
 
     private void loadPage(int page) {

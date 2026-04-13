@@ -1,5 +1,6 @@
 package dev.gracco.util;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,5 +21,12 @@ public class Validation {
         LocalDateTime dateTime = timestamp.toLocalDateTime();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm a");
         return dateTime.format(formatter);
+    }
+
+    public static String formatDate(Date date) {
+        if (date == null) {
+            return "";
+        }
+        return date.toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("MMMM d, uuuu"));
     }
 }

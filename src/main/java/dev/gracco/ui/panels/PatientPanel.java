@@ -7,6 +7,7 @@ import dev.gracco.ui.element.DashboardHeaderRenderer;
 import dev.gracco.ui.element.JRoundedButton;
 import dev.gracco.ui.element.RoundedPanel;
 import dev.gracco.ui.screen.AddPatientScreen;
+import dev.gracco.ui.screen.EditPatientScreen;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -104,6 +105,7 @@ public class PatientPanel extends JPanel {
 
         table = new JTable(tableModel);
         configureTable();
+        installTableDoubleClick();
 
         scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(Theme.SECONDARY, 2));
@@ -681,5 +683,36 @@ public class PatientPanel extends JPanel {
         }
 
         return formatted.toString();
+    }
+
+    private void installTableDoubleClick() {
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!SwingUtilities.isLeftMouseButton(e) || e.getClickCount() != 2) {
+                    return;
+                }
+
+                int viewRow = table.rowAtPoint(e.getPoint());
+                if (viewRow < 0) {
+                    return;
+                }
+
+                int modelRow = table.convertRowIndexToModel(viewRow);
+                Object value = tableModel.getValueAt(modelRow, 0);
+                if (value == null) {
+                    return;
+                }
+
+                int patientId;
+                try {
+                    patientId = Integer.parseInt(value.toString());
+                } catch (NumberFormatException ex) {
+                    return;
+                }
+
+                EditPatientScreen.open(patientId, () -> loadPage(currentPage));
+            }
+        });
     }
 }

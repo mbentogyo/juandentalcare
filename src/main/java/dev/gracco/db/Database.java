@@ -188,6 +188,7 @@ public class Database {
         public static boolean changePassword(String newPassword) {
             if (newPassword == null || newPassword.isBlank()) {
                 Alert.fatalError("Password cannot be empty.");
+                return false;
             }
 
             String sql = """
@@ -1094,6 +1095,141 @@ public class Database {
             } catch (SQLException e) {
                 Alert.fatalError(e.getMessage());
                 return "Database error.";
+            }
+        }
+    }
+
+    public static class Dashboard {
+        @Getter
+        public static class Stats {
+            private final int todayAppointments;
+            private final int completedToday;
+            private final int appointmentsLeftToday;
+            private final int tomorrowAppointments;
+            private final int cancelledToday;
+            private final int walkIn;
+
+            public Stats(int todayAppointments,
+                         int completedToday,
+                         int appointmentsLeftToday,
+                         int tomorrowAppointments,
+                         int cancelledToday,
+                         int walkIn) {
+                this.todayAppointments = todayAppointments;
+                this.completedToday = completedToday;
+                this.appointmentsLeftToday = appointmentsLeftToday;
+                this.tomorrowAppointments = tomorrowAppointments;
+                this.cancelledToday = cancelledToday;
+                this.walkIn = walkIn;
+            }
+        }
+
+        public static Stats getStats() {
+            StringBuilder sql = new StringBuilder("""
+                SELECT
+                    COUNT(CASE
+                        WHEN a.scheduled_date = CURDATE() THEN 1
+                    END) AS today_appointments,
+                    COUNT(CASE
+                        WHEN a.scheduled_date = CURDATE()
+                             AND a.scheduled_time >= CURTIME()
+                             AND a.status_id NOT IN ('Cancelled', 'No Show')
+                        THEN 1
+                    END) AS appointments_left_today,
+                    COUNT(CASE
+                        WHEN a.scheduled_date = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1
+                    END) AS tomorrow_appointments,
+                    COUNT(CASE
+                        WHEN a.scheduled_date = CURDATE()
+                             AND a.status_id = 'Cancelled'
+                        THEN 1
+                    END) AS cancelled_today
+                FROM appointments a
+                WHERE 1 = 1
+                """);
+
+            List<Object> parameters = new ArrayList<>();
+
+            if (User.getRole() == Enums.Role.DENTIST) {
+                sql.append(" AND a.dentist_user_id = ?");
+                parameters.add(User.getUserId());
+            }
+
+            try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+                for (int i = 0; i < parameters.size(); i++) {
+                    statement.setObject(i + 1, parameters.get(i));
+                }
+
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (!resultSet.next()) {
+                        return new Stats(0, 0, 0, 0, 0, 0);
+                    }
+
+                    return new Stats(
+                            resultSet.getInt("today_appointments"),
+                            0,
+                            resultSet.getInt("appointments_left_today"),
+                            resultSet.getInt("tomorrow_appointments"),
+                            resultSet.getInt("cancelled_today"),
+                            0
+                    );
+                }
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+                return new Stats(0, 0, 0, 0, 0, 0);
+            }
+        }
+
+        public static Object[][] getTodayAppointmentsTableData() {
+            StringBuilder sql = new StringBuilder("""
+                SELECT
+                    a.appointment_id,
+                    CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+                    CONCAT(d.first_name, ' ', d.last_name) AS dentist_name,
+                    a.scheduled_time,
+                    a.status_id,
+                    a.reason_for_visit,
+                    a.notes
+                FROM appointments a
+                INNER JOIN patients p ON a.patient_id = p.patient_id
+                INNER JOIN users d ON a.dentist_user_id = d.user_id
+                WHERE a.scheduled_date = CURDATE()
+                """);
+
+            List<Object> parameters = new ArrayList<>();
+
+            if (User.getRole() == Enums.Role.DENTIST) {
+                sql.append(" AND a.dentist_user_id = ?");
+                parameters.add(User.getUserId());
+            }
+
+            sql.append(" ORDER BY a.scheduled_time ASC, a.appointment_id ASC");
+
+            List<Object[]> rows = new ArrayList<>();
+
+            try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+                for (int i = 0; i < parameters.size(); i++) {
+                    statement.setObject(i + 1, parameters.get(i));
+                }
+
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        rows.add(new Object[]{
+                                resultSet.getInt("appointment_id"),
+                                resultSet.getString("patient_name"),
+                                resultSet.getString("dentist_name"),
+                                resultSet.getTime("scheduled_time").toLocalTime().format(DateTimeFormatter.ofPattern("hh:mm a")),
+                                resultSet.getString("status_id"),
+                                resultSet.getString("reason_for_visit"),
+                                resultSet.getString("notes")
+                        });
+                    }
+                }
+
+                return rows.toArray(new Object[0][]);
+            } catch (SQLException e) {
+                Alert.fatalError(e.getMessage());
+                return new Object[0][0];
             }
         }
     }

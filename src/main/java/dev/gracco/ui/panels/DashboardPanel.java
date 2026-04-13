@@ -1,11 +1,14 @@
 package dev.gracco.ui.panels;
 
+import dev.gracco.db.Database;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.Theme.FontType;
 import dev.gracco.ui.element.DashboardHeaderRenderer;
+import dev.gracco.ui.element.JRoundedButton;
 import dev.gracco.ui.element.RoundedPanel;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -21,15 +24,26 @@ import javax.swing.table.TableRowSorter;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class DashboardPanel extends JPanel {
-    private static final String[] TABLE_COLUMNS = {"One", "Two", "Three", "Four", "Five"};
+    private static final String[] TABLE_COLUMNS = {
+            "Appointment ID",
+            "Patient",
+            "Dentist",
+            "Scheduled Time",
+            "Status",
+            "Reason for Visit",
+            "Notes"
+    };
 
     private final JLabel todayAppointmentsValue;
     private final JLabel completedTodayValue;
@@ -38,18 +52,19 @@ public class DashboardPanel extends JPanel {
     private final JLabel cancelledTodayValue;
     private final JLabel walkInValue;
 
+    private final JLabel nameLabel;
+
     private final DefaultTableModel tableModel;
     private final JTable table;
     private final TableRowSorter<DefaultTableModel> tableSorter;
     private final Map<Integer, SortOrder> columnSortStates = new HashMap<>();
 
+    private final JRoundedButton refreshButton;
+
     public DashboardPanel() {
-        setLayout(new BorderLayout(20, 20));
+        setLayout(new BorderLayout());
         setBackground(Theme.WHITE);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JPanel infoPanel = new JPanel(new java.awt.GridLayout(2, 3, 16, 16));
-        infoPanel.setBackground(Theme.WHITE);
 
         todayAppointmentsValue = createValueLabel("0");
         completedTodayValue = createValueLabel("0");
@@ -58,6 +73,62 @@ public class DashboardPanel extends JPanel {
         cancelledTodayValue = createValueLabel("0");
         walkInValue = createValueLabel("0");
 
+        nameLabel = new JLabel(getCurrentUserFullName());
+        nameLabel.setFont(Theme.getFont(FontType.SEMI_BOLD, 16f));
+        nameLabel.setForeground(Theme.BLACK);
+
+        refreshButton = createRefreshButton();
+        refreshButton.addActionListener(e -> refreshDashboard());
+        refreshButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                refreshButton.setBackground(Theme.ACCENT_HOVER);
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                refreshButton.setBackground(Theme.ACCENT);
+            }
+        });
+
+        tableModel = new DefaultTableModel(new Object[0][0], TABLE_COLUMNS) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                return switch (columnIndex) {
+                    case 0 -> Integer.class;
+                    default -> String.class;
+                };
+            }
+        };
+
+        table = new JTable(tableModel);
+        tableSorter = new TableRowSorter<>(tableModel);
+        tableSorter.setComparator(0, Comparator.comparingInt(value -> {
+            if (value == null) {
+                return 0;
+            }
+            if (value instanceof Number number) {
+                return number.intValue();
+            }
+            return Integer.parseInt(value.toString().trim());
+        }));
+        table.setRowSorter(tableSorter);
+
+        configureTable();
+        installHeaderSorting();
+
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        tableScrollPane.setBorder(BorderFactory.createLineBorder(Theme.SECONDARY, 2));
+        tableScrollPane.getViewport().setBackground(Theme.WHITE);
+        tableScrollPane.setPreferredSize(new Dimension(0, 420));
+
+        JPanel infoPanel = new JPanel(new GridLayout(2, 3, 16, 16));
+        infoPanel.setBackground(Theme.WHITE);
         infoPanel.add(createStatCard("Today's appointments", todayAppointmentsValue, new Color(52, 152, 219)));
         infoPanel.add(createStatCard("Completed Today", completedTodayValue, new Color(46, 204, 113)));
         infoPanel.add(createStatCard("Appointments left today", appointmentsLeftTodayValue, new Color(241, 196, 15)));
@@ -65,44 +136,29 @@ public class DashboardPanel extends JPanel {
         infoPanel.add(createStatCard("Cancelled Today", cancelledTodayValue, new Color(231, 76, 60)));
         infoPanel.add(createStatCard("Walk in", walkInValue, new Color(230, 126, 34)));
 
-        Object[][] data = {
-                {"A", "B", "C", "D", "E"},
-                {"F", "G", "H", "I", "J"},
-                {"K", "L", "M", "N", "O"}
-        };
+        JPanel contentPanel = new JPanel(new BorderLayout(0, 16));
+        contentPanel.setBackground(Theme.WHITE);
+        contentPanel.add(createHeader(), BorderLayout.NORTH);
 
-        tableModel = new DefaultTableModel(data, TABLE_COLUMNS) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        JPanel middlePanel = new JPanel(new BorderLayout(0, 16));
+        middlePanel.setBackground(Theme.WHITE);
+        middlePanel.add(infoPanel, BorderLayout.NORTH);
+        middlePanel.add(createTableCard(tableScrollPane), BorderLayout.CENTER);
 
-        table = new JTable(tableModel);
-        tableSorter = new TableRowSorter<>(tableModel);
-        table.setRowSorter(tableSorter);
+        contentPanel.add(middlePanel, BorderLayout.CENTER);
 
-        configureTable();
-        installHeaderSorting();
+        JScrollPane dashboardScrollPane = new JScrollPane(contentPanel);
+        dashboardScrollPane.setBorder(null);
+        dashboardScrollPane.getViewport().setBackground(Theme.WHITE);
+        dashboardScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Theme.SECONDARY, 2));
-        scrollPane.getViewport().setBackground(Theme.WHITE);
+        add(dashboardScrollPane, BorderLayout.CENTER);
 
-        JPanel tableWrapper = createTableCard(scrollPane);
-
-        JPanel topWrapper = new JPanel(new BorderLayout(0, 16));
-        topWrapper.setBackground(Theme.WHITE);
-        topWrapper.add(createHeader(), BorderLayout.NORTH);
-        topWrapper.add(infoPanel, BorderLayout.CENTER);
-
-        add(topWrapper, BorderLayout.NORTH);
-        add(tableWrapper, BorderLayout.CENTER);
+        refreshDashboard();
     }
 
     private JPanel createHeader() {
-        JPanel header = new JPanel();
-        header.setLayout(new BorderLayout());
+        JPanel header = new JPanel(new BorderLayout());
         header.setBackground(Theme.WHITE);
 
         JPanel textWrapper = new JPanel();
@@ -123,24 +179,58 @@ public class DashboardPanel extends JPanel {
         welcome.setFont(Theme.getFont(FontType.MEDIUM, 16f));
         welcome.setForeground(Theme.BLACK);
 
-        JLabel name = new JLabel("Tester");
-        name.setFont(Theme.getFont(FontType.SEMI_BOLD, 16f));
-        name.setForeground(Theme.BLACK);
-
         JLabel period = new JLabel(".");
         period.setFont(Theme.getFont(FontType.MEDIUM, 16f));
         period.setForeground(Theme.BLACK);
 
         subline.add(welcome);
-        subline.add(name);
+        subline.add(nameLabel);
         subline.add(period);
 
         textWrapper.add(title);
+        textWrapper.add(Box.createVerticalStrut(2));
         textWrapper.add(subline);
 
         header.add(textWrapper, BorderLayout.WEST);
+        header.add(refreshButton, BorderLayout.EAST);
 
         return header;
+    }
+
+    private void refreshDashboard() {
+        nameLabel.setText(getCurrentUserFullName());
+
+        Database.Dashboard.Stats stats = Database.Dashboard.getStats();
+        updateDashboardData(
+                stats.getTodayAppointments(),
+                stats.getCompletedToday(),
+                stats.getAppointmentsLeftToday(),
+                stats.getTomorrowAppointments(),
+                stats.getCancelledToday(),
+                stats.getWalkIn()
+        );
+
+        setTableData(Database.Dashboard.getTodayAppointmentsTableData());
+    }
+
+    private String getCurrentUserFullName() {
+        String firstName = Database.User.getFirstName();
+        String lastName = Database.User.getLastName();
+
+        StringBuilder fullName = new StringBuilder();
+
+        if (firstName != null && !firstName.isBlank()) {
+            fullName.append(firstName.trim());
+        }
+
+        if (lastName != null && !lastName.isBlank()) {
+            if (!fullName.isEmpty()) {
+                fullName.append(" ");
+            }
+            fullName.append(lastName.trim());
+        }
+
+        return fullName.isEmpty() ? "User" : fullName.toString();
     }
 
     public void updateDashboardData(
@@ -243,7 +333,9 @@ public class DashboardPanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int viewColumn = header.columnAtPoint(e.getPoint());
-                if (viewColumn == -1) return;
+                if (viewColumn == -1) {
+                    return;
+                }
 
                 int modelColumn = table.convertColumnIndexToModel(viewColumn);
 
@@ -284,7 +376,7 @@ public class DashboardPanel extends JPanel {
         tableCard.setBackground(Theme.WHITE);
         tableCard.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        JLabel titleLabel = new JLabel("Table");
+        JLabel titleLabel = new JLabel("Today's Appointments");
         titleLabel.setForeground(Theme.BLACK);
         titleLabel.setFont(Theme.getFont(FontType.MEDIUM, 16f));
 
@@ -298,5 +390,16 @@ public class DashboardPanel extends JPanel {
         JLabel label = new JLabel(text);
         label.setOpaque(false);
         return label;
+    }
+
+    private JRoundedButton createRefreshButton() {
+        JRoundedButton button = new JRoundedButton("Refresh", 10, Theme.ACCENT);
+        button.setBackground(Theme.ACCENT);
+        button.setForeground(Theme.WHITE);
+        button.setFocusPainted(false);
+        button.setFont(Theme.getFont(FontType.SEMI_BOLD, 14));
+        button.setBorder(BorderFactory.createEmptyBorder(10, 18, 10, 18));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
     }
 }

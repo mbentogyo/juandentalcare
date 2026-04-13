@@ -1,6 +1,6 @@
 package dev.gracco.ui.panels;
 
-import dev.gracco.db.Admin;
+import dev.gracco.db.Database;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.Theme.FontType;
 import dev.gracco.ui.element.DashboardHeaderRenderer;
@@ -273,7 +273,7 @@ public class AdminPanel extends JPanel {
 
     private void loadPage(int page) {
         currentPage = page;
-        Object[][] data = Admin.getAdmins(page);
+        Object[][] data = Database.Admin.getAdmins(page);
         setTableData(data);
         currentRowCount = data.length;
         updatePaginationState();

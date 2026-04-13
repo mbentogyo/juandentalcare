@@ -1,6 +1,6 @@
 package dev.gracco.ui.screen;
 
-import dev.gracco.db.Patient;
+import dev.gracco.db.Database;
 import dev.gracco.ui.Alert;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.element.JRoundedButton;
@@ -171,7 +171,7 @@ public class AddPatientScreen extends JFrame {
                 return;
             }
 
-            String result = Patient.addPatient(
+            String result = Database.Patient.addPatient(
                     firstName,
                     lastName,
                     Date.valueOf(parsedBirthDate),

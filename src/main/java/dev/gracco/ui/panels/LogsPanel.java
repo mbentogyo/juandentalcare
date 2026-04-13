@@ -1,6 +1,6 @@
 package dev.gracco.ui.panels;
 
-import dev.gracco.db.Logs;
+import dev.gracco.db.Database;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.Theme.FontType;
 import dev.gracco.ui.element.DashboardHeaderRenderer;
@@ -227,7 +227,7 @@ public class LogsPanel extends JPanel {
 
     private void loadPage(int page) {
         currentPage = page;
-        Object[][] data = Logs.getLogsPage(page);
+        Object[][] data = Database.Logs.getLogsPage(page);
         setTableData(data);
         currentRowCount = data.length;
         updatePaginationState();

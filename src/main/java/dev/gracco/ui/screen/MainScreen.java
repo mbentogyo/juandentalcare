@@ -1,8 +1,8 @@
 package dev.gracco.ui.screen;
 
 import dev.gracco.Main;
+import dev.gracco.db.Database;
 import dev.gracco.db.Enums;
-import dev.gracco.db.User;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.panels.AdminPanel;
 import dev.gracco.ui.panels.AppointmentPanel;
@@ -113,7 +113,7 @@ public class MainScreen extends JFrame {
         sidebarCenter.add(Box.createVerticalStrut(12));
         sidebarCenter.add(patientButton);
 
-        if (User.getRole() == Enums.Role.ADMIN) {
+        if (Database.User.getRole() == Enums.Role.ADMIN) {
             adminButton = createSidebarButton("Admin");
             logsButton = createSidebarButton("Logs");
 
@@ -138,7 +138,7 @@ public class MainScreen extends JFrame {
         contentPanel.add(new AppointmentPanel(), "Appointments");
         contentPanel.add(new PatientPanel(), "Patients");
 
-        if (User.getRole() == Enums.Role.ADMIN) {
+        if (Database.User.getRole() == Enums.Role.ADMIN) {
             contentPanel.add(new AdminPanel(), "Admin");
             contentPanel.add(new LogsPanel(), "Logs");
         }
@@ -199,7 +199,7 @@ public class MainScreen extends JFrame {
         styleSidebarButton(patientButton, selectedPanel.equals("Patients"), "Patients",
                 Theme.getPatientColor(), Theme.getPatientWhite());
 
-        if (User.getRole() == Enums.Role.ADMIN) {
+        if (Database.User.getRole() == Enums.Role.ADMIN) {
             styleSidebarButton(adminButton, selectedPanel.equals("Admin"), "Admin",
                     Theme.getAdminColor(), Theme.getAdminWhite());
             styleSidebarButton(logsButton, selectedPanel.equals("Logs"), "Logs",

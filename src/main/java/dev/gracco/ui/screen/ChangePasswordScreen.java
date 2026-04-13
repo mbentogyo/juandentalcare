@@ -1,6 +1,6 @@
 package dev.gracco.ui.screen;
 
-import dev.gracco.db.User;
+import dev.gracco.db.Database;
 import dev.gracco.ui.Alert;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.element.JRoundedButton;
@@ -98,7 +98,7 @@ public class ChangePasswordScreen extends JFrame {
             String newPassword = new String(passwordField.getPassword());
             enterButton.setEnabled(false);
 
-            if (!newPassword.isBlank() && newPassword.length() > 7 && User.changePassword(newPassword)) {
+            if (!newPassword.isBlank() && newPassword.length() > 7 && Database.User.changePassword(newPassword)) {
                 Alert.success("Successfully changed your password. Redirecting...", this);
 
                 new javax.swing.Timer(3000, _ -> {

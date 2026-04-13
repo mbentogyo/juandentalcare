@@ -1,6 +1,6 @@
 package dev.gracco.ui.screen;
 
-import dev.gracco.db.Admin;
+import dev.gracco.db.Database;
 import dev.gracco.db.Enums;
 import dev.gracco.ui.Alert;
 import dev.gracco.ui.Theme;
@@ -165,7 +165,7 @@ public class AddUserScreen extends JFrame {
                 return;
             }
 
-            String result = Admin.addUser(username, password, role, firstName, lastName, email, contactNumber);
+            String result = Database.Admin.addUser(username, password, role, firstName, lastName, email, contactNumber);
 
             if (result != null) {
                 Alert.error(result, this);

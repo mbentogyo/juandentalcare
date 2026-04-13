@@ -1,6 +1,6 @@
 package dev.gracco.ui.screen;
 
-import dev.gracco.db.Admin;
+import dev.gracco.db.Database;
 import dev.gracco.db.Enums;
 import dev.gracco.ui.Alert;
 import dev.gracco.ui.Theme;
@@ -53,7 +53,7 @@ public class EditUserScreen extends JFrame {
     private EditUserScreen(int userId) {
         currentUserId = userId;
 
-        Object[] userData = Admin.getUserById(userId);
+        Object[] userData = Database.Admin.getUserById(userId);
         if (userData == null) {
             Alert.error("User not found.", null);
             instance = null;
@@ -198,7 +198,7 @@ public class EditUserScreen extends JFrame {
 
             String passwordToSave = password;
 
-            String result = Admin.updateUser(
+            String result = Database.Admin.updateUser(
                     userId,
                     username,
                     passwordToSave,

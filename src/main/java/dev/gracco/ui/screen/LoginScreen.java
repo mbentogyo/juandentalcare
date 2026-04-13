@@ -1,7 +1,7 @@
 package dev.gracco.ui.screen;
 
 import dev.gracco.Main;
-import dev.gracco.db.User;
+import dev.gracco.db.Database;
 import dev.gracco.ui.Alert;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.element.JRoundedButton;
@@ -77,7 +77,7 @@ public class LoginScreen extends JFrame {
         JPasswordField passwordField = new JPasswordField();
         passwordField.setMaximumSize(fieldSize);
         passwordField.setPreferredSize(fieldSize);
-        passwordField.setFont(Theme.getFont(Theme.FontType.MEDIUM, 14));
+        passwordField.setFont(Theme.getFont(Theme.FontType.REGULAR, 14));
         passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
         passwordField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Theme.SECONDARY, 1),
@@ -107,12 +107,12 @@ public class LoginScreen extends JFrame {
         });
 
         loginButton.addActionListener(_ -> {
-            String result = User.login(usernameField.getText(), new String(passwordField.getPassword()));
+            String result = Database.User.login(usernameField.getText(), new String(passwordField.getPassword()));
             if (result != null) {
                 Alert.error(result, this);
             } else {
                 this.dispose();
-                if (!User.isChangedPassword()) SwingUtilities.invokeLater(ChangePasswordScreen::new);
+                if (!Database.User.isChangedPassword()) SwingUtilities.invokeLater(ChangePasswordScreen::new);
                 else SwingUtilities.invokeLater(MainScreen::new);
             }
         });

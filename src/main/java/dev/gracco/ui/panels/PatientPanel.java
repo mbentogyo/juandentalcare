@@ -1,6 +1,6 @@
 package dev.gracco.ui.panels;
 
-import dev.gracco.db.Patient;
+import dev.gracco.db.Database;
 import dev.gracco.ui.Theme;
 import dev.gracco.ui.Theme.FontType;
 import dev.gracco.ui.element.DashboardHeaderRenderer;
@@ -506,7 +506,7 @@ public class PatientPanel extends JPanel {
 
     private void loadPage(int page) {
         currentPage = page;
-        Object[][] data = Patient.getPatients(
+        Object[][] data = Database.Patient.getPatients(
                 page,
                 patientIdField.getText().trim(),
                 firstNameField.getText().trim(),
